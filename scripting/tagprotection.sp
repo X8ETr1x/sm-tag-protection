@@ -19,7 +19,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "1.1"
+#define PLUGIN_VERSION "1.21"
 
 #define RED 0
 #define GREEN 255
@@ -38,6 +38,7 @@ new bool:tagfile_exist		= false;
 new bool:kicktimerActive[MAXPLAYERS+1];
 new bool:StillHasTag[MAXPLAYERS+1]	= false;
 new String:WearingTag[255];
+new bool:ClientisReady[MAXPLAYERS+1];
 
 new Float:gTimeLeft[MAXPLAYERS+1];
 
@@ -66,7 +67,8 @@ public OnMapStart()
 	FileToKeyValues(tagfile,taglistfile);
 	if(!FileExists(taglistfile)) 
 	{
-		LogMessage("taglist.cfg not parsed...file doesnt exist!");
+		LogMessage("[SM] taglist.cfg not parsed...file doesnt exist!");
+		SetFailState("[SM] taglist.cfg not parsed...file doesnt exist! Please install the plugin correctly...");
 		tagfile_exist = false;
 	}
 	else
@@ -136,6 +138,15 @@ public Action:Command_RemoveTag(client, args)
 	return Plugin_Handled;
 }
 
+public OnClientDisonnect(client)
+{
+	ClientisReady[client] = false;
+}
+
+public OnClientPostAdminCheck(client)
+{
+	ClientisReady[client] = true;
+}
 public OnMapEnd()
 {
 	KvRewind(tagfile);
@@ -165,7 +176,7 @@ public OnClientAuthorized(client, const String:auth[])
 
 public OnClientSettingsChanged(client)
 {
-	if(!IsFakeClient(client))
+	if(!IsFakeClient(client) && ClientisReady[client])
 	{
 		if(client != 0 && IsClientInGame(client))
 		{
@@ -229,7 +240,7 @@ public Action:tagCheck(Handle: timer, any:client)
 */
 
 public Action:tagCheckChange(client)
-{
+{	
 	decl String:clientName[64];
 	decl String:buffer[255];
 	new time;
@@ -259,9 +270,9 @@ public Action:tagCheckChange(client)
 			if(time == -1)
 			{
 				//timer is active, we dont need to start the timer again
-				if(!kicktimerActive[client])
+				if(!kicktimerActive[client] && IsClientInGame(client))
 				{
-					if(flags & ADMFLAG_TAGPROT|| flags & ADMFLAG_ROOT)
+					if(flags & ADMFLAG_TAGPROT || flags & ADMFLAG_ROOT)
 					{
 						return Plugin_Handled;
 					}
@@ -284,7 +295,7 @@ public Action:tagCheckChange(client)
 				new String: bAuth[64];
 				GetClientName(client, bName, sizeof(bName));
 				GetClientAuthString(client, bAuth, sizeof(bAuth));
-				ServerCommand("sm_ban #%d %s Illegal tag", clientid, time);
+				ServerCommand("sm_ban #%d %d Illegal tag", clientid, time);
 				LogMessage("[SM] Banned Player %s for illegal tag, SteamID: %s", bName, bAuth);
 				return Plugin_Handled;
 			}
