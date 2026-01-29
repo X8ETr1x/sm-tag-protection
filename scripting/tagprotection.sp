@@ -20,7 +20,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.3.0"
+#define PLUGIN_VERSION "1.4.0"
 
 #define RED 0
 #define GREEN 255
@@ -45,10 +45,10 @@ float gTimeLeft[MAXPLAYERS+1];
 public Plugin myinfo = 
 {
 	name = "Tag Protection",
-	author = "InstantDeath, X8ETr1x",
+	author = "InstantDeath",
 	description = "Prevents unwanted tag usage in names.",
 	version = PLUGIN_VERSION,
-	url = "https://github.com/X8ETr1x/sm-tag-protection"
+	url = "http://www.xpgaming.net"
 };
 
 public void OnPluginStart()
@@ -58,6 +58,8 @@ public void OnPluginStart()
 	tagwarntime = CreateConVar("sm_tagwarntime" , "60.0" , "Time in seconds to warn player that he has an invalid tag", FCVAR_PLUGIN);
 	RegAdminCmd("sm_addtag", Command_AddTag, ADMFLAG_BAN, "[SM] Add tags to the list. Usage: sm_addtag <tag> (time for ban, -1 for kick)");
 	RegAdminCmd("sm_removetag", Command_RemoveTag, ADMFLAG_BAN, "[SM] Removes the specified tag from the list. Usage: sm_removetag <tag>");
+	
+	AutoExecConfig(true);
 }
 public void OnMapStart()
 {
