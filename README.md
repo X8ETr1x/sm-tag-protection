@@ -2,61 +2,63 @@
 
 A fork of [InstantDeath's plugin](https://forums.alliedmods.net/showthread.php?t=80020).
 
-This is a simple advertisements plugin. It supports center, chat, hint, menu and top messages.
+A small simple plugin that allows only certain people to wear a specific tag. or use it to keep clans that you don't want on your server out.
 
-sm_advertisements_enabled (0/1, def 1)
-Enable/disable displaying advertisements.
+- Allows only people with the Admflag_custom1 flag (and people with root access) to wear a protected clan tag.
+- In-game Admin control, add and remove tags from in game, with the option to kick or ban offenders.
+- A kick time limit, to give offenders a chance to remove the offensive tag.
 
-sm_advertisements_file (def "advertisements.txt")
-File to read the advertisements from. Useful if you're running multiple servers from one installation, and want to use different advertisements per server.
+## Commands
 
-sm_advertisements_interval (def 30)
-Number of seconds between advertisements.
+* `sm_addtag`:
+  * **Description:** Add tags to the list.
+  * **Parameters:**
+    * **Tag:** (*Mandatory*) the tag string.
+    * **Time:** (*Mandatory*) the time in seconds until a kick. `-1` is an instant kick.
+* `sm_removetag`:
+  * **Description:** Removes the specified tag from the list.
+  * **Parameters:**
+    * **Tag:** (*Mandatory*) the tag string.
 
-sm_advertisements_random (0/1, def 0)
-Enable/disable random advertisements. When enabled, advertisements are randomized on every map change and reload.
+## Configuration
 
-sm_advertisements_reload
-Server command to reload the advertisements.
+### AutoExec
 
+```
+// File to load and save tags.
+// -
+// Default: "configs/taglist.cfg"
+sm_tagcfg "configs/taglist.cfg"
 
-By default the plugin reads from addons/sourcemod/configs/advertisements.txt, which has this format:
+// Tag Protection Version
+// -
+// Default: "1.4.0"
+sm_tagprotection_version "1.4.0"
 
-Code:
+// Time in seconds to warn player that he has an invalid tag
+// -
+// Default: "60.0"
+sm_tagwarntime "60.0"
+```
+### SourceMod
 
-"Advertisements"
+```
+"Tag Protection"
 {
-    "1"
-    {
-        "chat"        "{green}contact@domain.com"
-    }
-    "2"
-    {
-        "top"         "www.domain.com"
-        "flags"       "a"
-    }
+	"My Tag"
+	{
+		"time"		"-1"
+	}
+  "My Tag"
+	{
+		"time"		"-1"
+	}
 }
+```
+## Installation
 
-Make sure to save this file as UTF-8 (without BOM), otherwise special characters will not work!
+Follow the standard SourceMod process for installation by adding:
 
-Types
-
-The following types are supported:
-
-center: A center message, like sm_csay.
-chat: A chat message, like sm_say. A list of supported colors can be found on https://github.com/PremyslTalich/ColorVariables.
-hint: A hint message, like sm_hsay.
-menu: A menu message, like sm_msay, but without the title or the Exit-option. Pressing 0 will still hide the message, but it will block 1-9 from switching weapons while it's showing.
-top: A top-left message, like sm_tsay. It supports any of the colors listed on https://www.doctormckay.com/morecolors.php, or custom colors with {#abcdef}.
-
-Multiple types per advertisement are allowed, so you can show a different message in multiple places at the same time.
-
-Message
-
-The message supports the following variables: {currentmap}, {nextmap}, {date}, {time}, {time24} and {timeleft}. Next to that you can print the value of any cvar by enclosing the name with {}, for example {mp_friendlyfire}. Use \n for newlines, which works with center, chat, hint and menu messages.
-
-A couple of examples are given in the supplied advertisements.txt.
-
-Flags
-
-This field is optional. It accepts a list of flags of players who will not see the advertisement if they have any of those flags. If left empty, only admins will see the advertisement. If omitted everyone will see the advertisement.
+- The compiled plugin `tagprotection.smx` to `tf/addons/sourcemod/plugins/`.
+- The configuration file 'tags.cfg` to `/tf/addons/sourcemod/config/`.
+- Reload all plugins or restart the server.
