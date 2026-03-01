@@ -64,7 +64,7 @@ public Plugin myinfo = {
 public void OnPluginStart() {
 
     // Set CVars
-    CreateConVar("sm_tagprotection_version", PLUGIN_VERSION, "Tag Protection Version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+    CreateConVar("sm_tagprotection_version", PLUGIN_VERSION, "Tag protection version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
     g_CVarTagFileLoc = CreateConVar("sm_tp_tag_cfg" , "configs/taglist.cfg" , "File to load and save tags.", FCVAR_PLUGIN);
 	g_CVarAdminFlag = CreateConVar("sm_tp_admin_flag" , "Admin_Generic" , "SourceMod admin tag to grant immunity (https://sm.alliedmods.net/new-api/admin/AdminFlag)", FCVAR_PLUGIN);
 
