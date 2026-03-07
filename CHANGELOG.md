@@ -1,3 +1,9 @@
+## [2.1.0] 2026-03-07
+
+### Removed
+
+- OnClientSettingsChanged() trigger due to continued race condition issues with client name updates when joining a server.
+
 ## [2.0.0] 2026-03-01
 
 An almost complete rewrite of the original version to focus on modernization and stability in accordance with modern versions of the Source Engine and SourceMod.
