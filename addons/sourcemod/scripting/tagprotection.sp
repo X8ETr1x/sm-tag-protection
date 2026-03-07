@@ -16,7 +16,7 @@
 
 #define     PLUGIN_NAME         "Tag Protection"
 #define     PLUGIN_AUTHOR       "InstantDeath, X8ETr1x"
-#define     PLUGIN_VERSION      "2.0.0"
+#define     PLUGIN_VERSION      "2.1.0"
 #define     PLUGIN_URL          "https://github.com/Radioactive-Gaming/sm-tag-protection"
 #define     PLUGIN_DESC         "Prevents unwanted tag usage in names."
 #define     STEAMID64_LENGTH    17
@@ -34,10 +34,6 @@ Handle      g_CVarAdminFlag;
 Handle      g_TagData;                              // Key/Value pairs of tag data
 char        g_TagListFile[PLATFORM_MAX_PATH];       // The path of the tag list file.
 AdminFlag   g_ImmunityFlag;                         // The specified admin flag for immunity
-
-// Player data.
-bool        g_AdminFlagsChecked[MAXPLAYERS + 1];    // Tracks if OnClientPostAdminCheck() has completed.
-bool        g_KickImmunity[MAXPLAYERS + 1];         // Tracks if a player is immune.
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -131,24 +127,6 @@ public void OnMapStart() {
 
 }
 
-public void OnClientSettingsChanged(int client) {
-
-    /**
-     * Check for player name changes on client setting change.
-     *
-     * This function ensures that OnClientPostAdminCheck() has completed. If so, then a
-     * check of the player's name is initiated. This is not guaranteed to work if a player
-     * changes name in game as there is an unfixable race condition due to name change cooldown.
-    */
-
-    if (g_AdminFlagsChecked[client] == true) {
-
-        tagCheck(client);
-
-    }
-
-}
-
 public void OnClientPostAdminCheck(int client) {
 
     /**
@@ -175,7 +153,7 @@ public void OnClientPostAdminCheck(int client) {
 
 		else if (hasAdminFlag == false && hasRootFlag == false) {
 
-            g_KickImmunity[client] = false;
+            tagCheck(client);
 
 		}
 
@@ -183,20 +161,9 @@ public void OnClientPostAdminCheck(int client) {
 
     else if (adminID == INVALID_ADMIN_ID) {
 
-        g_KickImmunity[client] = false;
+        tagCheck(client);
 
     }
-
-	// Set that the admin checks have completed.
-	g_AdminFlagsChecked[client] = true;
-
-}
-
-public void OnClientDisonnect(int client) {
-
-	// Clear the admin checks for the client.
-	g_AdminFlagsChecked[client] = false;
-    g_KickImmunity[client] = false;
 
 }
 
@@ -376,79 +343,75 @@ void tagCheck(int client) {
         // Skip if the client is not yet in game.
         if (IsClientInGame(client) == true) {
 
-            if (g_KickImmunity[client] == false) {
+            int  tagMatch;
+            int  userID;
+            int  time;
+            char tag[MAX_NAME_LENGTH];
+            char clientName[MAX_NAME_LENGTH];
+            char steamID[STEAMID64_LENGTH];
 
-                int  tagMatch;
-                int  userID;
-                int  time;
-                char tag[MAX_NAME_LENGTH];
-                char clientName[MAX_NAME_LENGTH];
-                char steamID[STEAMID64_LENGTH];
+            // Retrieve player information.
+            userID = GetClientUserId(client);
+            GetClientAuthId(client, AuthId_SteamID64, steamID, STEAMID64_LENGTH);
+            GetClientName(client, clientName, MAX_NAME_LENGTH);
 
-                // Retrieve player information.
-                userID = GetClientUserId(client);
-                GetClientAuthId(client, AuthId_SteamID64, steamID, STEAMID64_LENGTH);
-                GetClientName(client, clientName, MAX_NAME_LENGTH);
+            // Rewind to the start of the tag data.
+            KvRewind(g_TagData);
+            // Sets position to the first k/v pair under the first section.
+            KvGotoFirstSubKey(g_TagData);
 
-                // Rewind to the start of the tag data.
-                KvRewind(g_TagData);
-                // Sets position to the first k/v pair under the first section.
-                KvGotoFirstSubKey(g_TagData);
+            // Loop through each tag to find a player name match.
+            do {
 
-                // Loop through each tag to find a player name match.
-                do {
+                //Check if the player's name contains the tag as a substring.
+                KvGetSectionName(g_TagData, tag, MAX_NAME_LENGTH);
+                tagMatch = StrContains(clientName, tag, false);
 
-                    //Check if the player's name contains the tag as a substring.
-                    KvGetSectionName(g_TagData, tag, MAX_NAME_LENGTH);
-                    tagMatch = StrContains(clientName, tag, false);
+                // Get the ban time from the section's key 'time'.
+                time = KvGetNum(g_TagData, "time", -1);
 
-                    // Get the ban time from the section's key 'time'.
-                    time = KvGetNum(g_TagData, "time", -1);
+                // A match will return the position of the substring, hence >= 0.
+                if (tagMatch >= 0) {
 
-                    // A match will return the position of the substring, hence >= 0.
-                    if (tagMatch >= 0) {
+                    // Action: kick.
+                    if (time  == -1) {
 
-                        // Action: kick.
-                        if (time  == -1) {
-
-                            ServerCommand("sm_kick #%d You were kicked for wearing a restricted tag: '%s'", userID, tag);
-                            LogMessage("Kicked player %s with ID %s for wearing the restricted tag '%s.'", clientName, steamID, tag);
-
-                            break;
-
-                        }
-
-                        // Action: ban.
-                        else if (time >= 0) {
-
-                            ServerCommand("sm_ban #%d %d You were banned for wearing a restricted tag: '%s'", userID, time, tag);
-                            LogMessage("Banned player %s with ID %s for wearing the restricted tag '%s.'", clientName, steamID, tag);
-
-                            break;
-
-                        }
-
-                        else if (time < -1) {
-
-                            LogMessage("[ERROR] tagCheck(): specified time %d for tag %s must be greater than -2.", time, tag);
-
-                        }
-
-                    }
-
-                    else if (tagMatch < -1) {
-
-                        LogMessage("[ERROR] tagCheckChange(): unexpected value in tagMatch: %d", tagMatch);
+                        ServerCommand("sm_kick #%d You were kicked for wearing a restricted tag: '%s'", userID, tag);
+                        LogMessage("Kicked player %s with ID %s for wearing the restricted tag '%s.'", clientName, steamID, tag);
 
                         break;
 
                     }
 
+                    // Action: ban.
+                    else if (time >= 0) {
+
+                        ServerCommand("sm_ban #%d %d You were banned for wearing a restricted tag: '%s'", userID, time, tag);
+                        LogMessage("Banned player %s with ID %s for wearing the restricted tag '%s.'", clientName, steamID, tag);
+
+                        break;
+
+                    }
+
+                    else if (time < -1) {
+
+                        LogMessage("[ERROR] tagCheck(): specified time %d for tag %s must be greater than -2.", time, tag);
+
+                    }
+
                 }
 
-                while (KvGotoNextKey(g_TagData));
+                else if (tagMatch < -1) {
+
+                    LogMessage("[ERROR] tagCheckChange(): unexpected value in tagMatch: %d", tagMatch);
+
+                    break;
+
+                }
 
             }
+
+            while (KvGotoNextKey(g_TagData));
 
         }
 
