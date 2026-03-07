@@ -133,7 +133,8 @@ public void OnClientPostAdminCheck(int client) {
      * Check for SourceMod admin status.
      *
      * The function looks for either the specificed admin flag or the
-     * root (z) flag.
+     * root (z) flag. If the player is not immune to checks, execute
+	 * the tag check.
     */
 
 	// Check for client's admin status.
