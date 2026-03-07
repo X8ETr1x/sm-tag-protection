@@ -146,13 +146,7 @@ public void OnClientPostAdminCheck(int client) {
 		bool hasAdminFlag = GetAdminFlag(adminID, g_ImmunityFlag, Access_Effective);
 		bool hasRootFlag = GetAdminFlag(adminID, Admin_Root, Access_Effective);
 
-		if(hasAdminFlag == true || hasRootFlag == true) {
-
-            g_KickImmunity[client] = true;
-
-		}
-
-		else if (hasAdminFlag == false && hasRootFlag == false) {
+        if (hasAdminFlag == false && hasRootFlag == false) {
 
             tagCheck(client);
 
